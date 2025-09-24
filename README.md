@@ -1,8 +1,11 @@
 # Slonyarskiy discord music bot
 Simple discord music bot
 Huge shoutout to: 
+
 [sedmelluq/lavaplayer](https://github.com/sedmelluq/lavaplayer)
+
 [discord-jda/JDA](https://github.com/discord-jda/JDA)
+
 [lavalink-devs/lavaplayer](https://github.com/lavalink-devs/lavaplayer)
 
 ## Requirements
