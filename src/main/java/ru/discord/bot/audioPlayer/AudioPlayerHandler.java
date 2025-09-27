@@ -25,7 +25,7 @@ public class AudioPlayerHandler {
         this.audioPlayerManager = audioPlayerManager;
     }
 
-    public AudioPlayerPlaylistHandler getAudioPlayerWrapper(Guild guild) {
+    public AudioPlayerPlaylistHandler getPlaylistHandler(Guild guild) {
 
         AudioSendHandler audioSendHandler = guild.getAudioManager().getSendingHandler();
 
@@ -56,8 +56,6 @@ public class AudioPlayerHandler {
         if (Holder.INSTANCE == null) {
 
             Holder.INSTANCE = new AudioPlayerHandler();
-
-            return Holder.INSTANCE;
         }
 
         return Holder.INSTANCE;

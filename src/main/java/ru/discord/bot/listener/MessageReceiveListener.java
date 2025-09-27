@@ -6,13 +6,13 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import ru.discord.bot.command.*;
 import ru.discord.bot.command.general.HelpCommandHandler;
-import ru.discord.bot.command.music.PlayCommandHandler;
-import ru.discord.bot.command.music.PlaylistCommandHandler;
-import ru.discord.bot.command.music.SkipCommandHandler;
-import ru.discord.bot.command.music.StopCommandHandler;
+import ru.discord.bot.command.music.*;
 import ru.discord.bot.util.Logger;
 
 import java.util.Map;
+
+import static ru.discord.bot.util.DiscordMessageUtil.sendMessage;
+import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
 
 public class MessageReceiveListener extends ListenerAdapter {
 
@@ -23,7 +23,8 @@ public class MessageReceiveListener extends ListenerAdapter {
             "play", new PlayCommandHandler(),
             "skip", new SkipCommandHandler(),
             "stop", new StopCommandHandler(),
-            "playlist", new PlaylistCommandHandler()
+            "playlist", new PlaylistCommandHandler(),
+            "np", new NowPlayingCommandHandler()
     );
 
     @Override
@@ -31,6 +32,7 @@ public class MessageReceiveListener extends ListenerAdapter {
 
         if (event.getAuthor().isBot()) return;
 
+        // TODO - feature: add shuffle function 25.09.2025 19:26
         log.info("Message received: ".concat(event.getMessage().getContentRaw()));
         log.info("Thread: ".concat(Thread.currentThread().getName()));
 
@@ -54,9 +56,7 @@ public class MessageReceiveListener extends ListenerAdapter {
                 handler.onCommand(event);
             } catch (Exception e) {
 
-                event.getMessage()
-                        .reply("```Ey boss! Got an error: \n" + e.getMessage() + "```")
-                        .queue();
+                sendReply(event.getMessage(), "```Ey boss! Got an error: \n" + e.getMessage() + "```");
             }
         }
     }
@@ -65,6 +65,6 @@ public class MessageReceiveListener extends ListenerAdapter {
 
         TextChannel channel = event.getChannel().asTextChannel();
 
-        channel.sendMessage("```Unknown command, bruh. Try calling s!help command```").queue();
+        sendMessage(channel, "```Unknown command, bruh. Try calling s!help command```");
     }
 }

@@ -5,9 +5,10 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import org.jetbrains.annotations.NotNull;
-import ru.discord.bot.audioPlayer.AudioConnectionController;
+import ru.discord.bot.bot.BotStateController;
 import ru.discord.bot.command.CommandHandler;
 import ru.discord.bot.exceptions.AudioConnectionException;
 import ru.discord.bot.exceptions.MessageFormatException;
@@ -16,16 +17,18 @@ import ru.discord.bot.audioPlayer.AudioPlayerHandler;
 import ru.discord.bot.audioPlayer.AudioPlayerPlaylistHandler;
 import ru.discord.bot.util.Logger;
 
+import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
+
 public class PlayCommandHandler extends CommandHandler {
 
     private static final Logger log = Logger.getLogger(PlayCommandHandler.class);
 
     private final AudioPlayerHandler playerHandler;
-    private final AudioConnectionController acController;
+    private final BotStateController bsController;
 
     public PlayCommandHandler() {
 
-        this.acController = AudioConnectionController.getInstance();
+        this.bsController = BotStateController.getInstance();
         this.playerHandler = AudioPlayerHandler.getInstance();
     }
 
@@ -40,7 +43,7 @@ public class PlayCommandHandler extends CommandHandler {
 
         try {
 
-            this.acController.openConnection(guild, voiceChannel);
+            this.bsController.openConnection(guild, voiceChannel);
         } catch (Exception e) {
 
             throw new AudioConnectionException(
@@ -49,21 +52,16 @@ public class PlayCommandHandler extends CommandHandler {
             );
         }
 
-        AudioPlayerPlaylistHandler apPlaylistHandler = playerHandler.getAudioPlayerWrapper(guild);
+        AudioPlayerPlaylistHandler apPlaylistHandler = playerHandler.getPlaylistHandler(guild);
 
         playerHandler.getAudioPlayerManager().loadItem(url, new LoadResult(model, apPlaylistHandler));
     }
 
     private String getUrlFromMessage(String message) {
 
-        String normalizedMessage = message.trim();
-        int msgLength = normalizedMessage.length();
+        String normalizedMessage = message.trim().replaceAll("\\s+", " ");
 
-        do {
-            normalizedMessage = normalizedMessage.replaceAll(" {2}", " ");
-        } while (msgLength != normalizedMessage.length());
-
-        String[] split = message.split(" ");
+        String[] split = normalizedMessage.split(" ");
 
         if (split.length != 2) {
 
@@ -91,11 +89,11 @@ public class PlayCommandHandler extends CommandHandler {
 
             log.info("Found track, adding to квеве");
 
-            commandModel.getOriginalMessage()
-                    .reply("```Found track, adding to queue```")
-                    .queue();
+            sendReply(commandModel.getOriginalMessage(), "```Found track, adding to queue```");
 
-            playlistHandler.addToQueue(audioTrack);
+            User user = commandModel.getOriginalMessage().getAuthor();
+
+            playlistHandler.addToQueue(user, audioTrack);
         }
 
         @Override
@@ -105,13 +103,13 @@ public class PlayCommandHandler extends CommandHandler {
 
             log.info("Found " + audioPlaylist.getTracks().size() + " tracks");
 
-            commandModel.getOriginalMessage()
-                    .reply("```Found " + size + " songs. Will start shortly.```")
-                    .queue();
+            sendReply(commandModel.getOriginalMessage(), "```Found " + size + " songs. Will start shortly.```");
+
+            User author = commandModel.getOriginalMessage().getAuthor();
 
             audioPlaylist
                     .getTracks()
-                    .forEach(playlistHandler::addToQueue);
+                    .forEach(track -> playlistHandler.addToQueue(author, track));
 
             log.info("Added " + audioPlaylist.getTracks().size() + " tracks. EVERYFINK");
         }
@@ -119,15 +117,17 @@ public class PlayCommandHandler extends CommandHandler {
         @Override
         public void noMatches() {
 
-            commandModel.getOriginalMessage().reply("```Nofink faund)))```").queue();
+            sendReply(commandModel.getOriginalMessage(), "```Nofink faund)))```");
+
+            playlistHandler.fullStop();
         }
 
         @Override
         public void loadFailed(FriendlyException e) {
 
-            commandModel.getOriginalMessage()
-                    .reply("``` Got exception while loading music: " + e.getMessage() + "```")
-                    .queue();
+            sendReply(commandModel.getOriginalMessage(), "``` Got exception while loading music: " + e.getMessage() + "```");
+
+            playlistHandler.fullStop();
         }
     }
 }

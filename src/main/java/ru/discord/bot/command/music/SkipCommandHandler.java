@@ -6,6 +6,8 @@ import ru.discord.bot.model.CommandModel;
 import ru.discord.bot.audioPlayer.AudioPlayerHandler;
 import ru.discord.bot.util.Logger;
 
+import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
+
 public class SkipCommandHandler extends CommandHandler {
 
     private static final Logger log = Logger.getLogger(SkipCommandHandler.class);
@@ -22,10 +24,11 @@ public class SkipCommandHandler extends CommandHandler {
 
         botInSameVoiceChannel(model);
 
-        var playlistHandler = playerHandler.getAudioPlayerWrapper(model.getOriginGuild());
+        // TODO - Добавить обработку скипа нескольких песен
+        var playlistHandler = playerHandler.getPlaylistHandler(model.getOriginGuild());
 
         playlistHandler.skipTrack();
 
-        model.getOriginalMessage().reply("```Skipping track```").queue();
+        sendReply(model.getOriginalMessage(), "```Skipping track```");
     }
 }

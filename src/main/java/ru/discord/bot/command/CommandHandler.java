@@ -38,14 +38,14 @@ public abstract class CommandHandler {
 
     protected void botInSameVoiceChannel(CommandModel model) {
 
-        VoiceChannel voiceChannel = model.getOriginVoiceChannel();
+        VoiceChannel userVoiceChannel = model.getOriginVoiceChannel();
         Guild guild = model.getOriginGuild();
 
         VoiceChannel botVoiceChannel = guild.getAudioManager().getConnectedChannel() == null
                 ? null
                 : guild.getAudioManager().getConnectedChannel().asVoiceChannel();
 
-        if (botVoiceChannel != null && !voiceChannel.getId().equals(botVoiceChannel.getId())) {
+        if (botVoiceChannel != null && !userVoiceChannel.getId().equals(botVoiceChannel.getId())) {
 
             throw new AudioConnectionException("Bot is already in use in another channel. " +
                     "Please go to that channel and then use s!stop command.");

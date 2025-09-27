@@ -4,10 +4,15 @@ import org.jetbrains.annotations.NotNull;
 import ru.discord.bot.command.CommandHandler;
 import ru.discord.bot.model.CommandModel;
 import ru.discord.bot.audioPlayer.AudioPlayerHandler;
+import ru.discord.bot.util.Logger;
 
 import java.util.List;
 
+import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
+
 public class PlaylistCommandHandler extends CommandHandler {
+
+    private static final Logger log = Logger.getLogger(PlaylistCommandHandler.class);
 
     private final AudioPlayerHandler playerHandler;
 
@@ -21,9 +26,11 @@ public class PlaylistCommandHandler extends CommandHandler {
 
         botInSameVoiceChannel(model);
 
-        var playlistHandler = playerHandler.getAudioPlayerWrapper(model.getOriginGuild());
+        var playlistHandler = playerHandler.getPlaylistHandler(model.getOriginGuild());
 
-        List<String> curPlaylist = playlistHandler.getCurrentPlaylist();
+        Integer pageNum = getPageNumber(model.getOriginalMessage().getContentRaw());
+
+        List<String> curPlaylist = playlistHandler.getCurrentPlaylist(pageNum);
 
         String result;
 
@@ -35,6 +42,32 @@ public class PlaylistCommandHandler extends CommandHandler {
             result = "Currently in playlist:\n".concat(String.join("\n", curPlaylist));
         }
 
-        model.getOriginalMessage().reply("```".concat(result).concat("```")).queue();
+        sendReply(model.getOriginalMessage(), "```".concat(result).concat("```"));
+    }
+
+    private Integer getPageNumber(String message) {
+
+        String normalizedMessage = message.trim().replaceAll("\\s+", " ");
+
+        String[] split = normalizedMessage.split(" ");
+
+        if (split.length < 2) {
+
+            return 1;
+        }
+
+        String pageNumStr = split[1];
+
+        try {
+
+            return pageNumStr.isEmpty()
+                    ? 1
+                    : Integer.parseInt(pageNumStr);
+        } catch (Exception e) {
+
+            log.error("Could not parse page number: " + normalizedMessage);
+
+            return 1;
+        }
     }
 }

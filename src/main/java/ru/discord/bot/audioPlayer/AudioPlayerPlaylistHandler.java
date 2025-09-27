@@ -8,12 +8,15 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.Nullable;
+import ru.discord.bot.audioPlayer.misc.CustomQueue;
+import ru.discord.bot.bot.BotStateController;
+import ru.discord.bot.model.AudioTrackInfoModel;
 import ru.discord.bot.util.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.REPLACED;
@@ -21,12 +24,15 @@ import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.REPLACE
 public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements AudioSendHandler {
 
     private static final Logger log = Logger.getLogger(AudioPlayerPlaylistHandler.class);
+
     private static final Set<AudioTrackEndReason> UNSKIPPABLE_REASONS = Set.of(
             AudioTrackEndReason.FINISHED
     );
 
-    private final AudioConnectionController acController;
-    private final Queue<AudioTrack> tracks;
+    private static final int PAGE_SIZE = 10;
+
+    private final BotStateController bsController;
+    private final CustomQueue tracks;
     private final AudioPlayer audioPlayer;
     private final Guild guild;
 
@@ -36,21 +42,26 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
             AudioPlayer audioPlayer,
             Guild guild
     ) {
-        this.acController = AudioConnectionController.getInstance();
+        this.bsController = BotStateController.getInstance();
         this.audioPlayer = audioPlayer;
         this.guild = guild;
-        this.tracks = new ConcurrentLinkedQueue<>();
+        this.tracks = new CustomQueue();
     }
 
-    public void addToQueue(AudioTrack track) {
+    public void addToQueue(User author, AudioTrack track) {
 
-        tracks.add(track);
+        AudioTrackInfoModel trackInfo = AudioTrackInfoModel.builder()
+                .author(author)
+                .audioTrack(track)
+                .build();
+
+        tracks.add(trackInfo);
 
         if (audioPlayer.getPlayingTrack() == null) {
 
             log.info("No current track playing, starting new track");
 
-            audioPlayer.playTrack(tracks.remove());
+            audioPlayer.playTrack(tracks.remove().getAudioTrack());
         }
     }
 
@@ -65,20 +76,29 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
 
         if (!tracks.isEmpty()) {
 
-            audioPlayer.playTrack(tracks.remove());
+            audioPlayer.playTrack(tracks.remove().getAudioTrack());
+
+            return;
         }
+
+        fullStop();
     }
 
     public void fullStop() {
 
         tracks.clear();
         audioPlayer.stopTrack();
-        acController.closeConnection(guild);
+        bsController.closeConnection(guild);
     }
 
-    public List<String> getCurrentPlaylist() {
+    public List<String> getCurrentPlaylist(int pageNum) {
 
-        AudioTrack currentlyPlaying = audioPlayer.getPlayingTrack();
+        if (pageNum < 1) {
+
+            pageNum = 1;
+        }
+
+        AudioTrackInfoModel currentlyPlaying = tracks.current();
 
         List<String> currentPlaylist = new ArrayList<>();
 
@@ -91,17 +111,47 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
 
         tracks.forEach(track -> currentPlaylist.add(formatTrack(track, index)));
 
-        return currentPlaylist;
+        // TODO - bug: Если число песен кратно 10, то на последней странице хуярит что плейлист пустой
+        if (pageNum * PAGE_SIZE > currentPlaylist.size()) {
+
+            pageNum = currentPlaylist.size() / 10;
+        }
+
+        int firstElemIdx = (pageNum - 1) * PAGE_SIZE;
+        int lastElemIdx = Math.min(pageNum * PAGE_SIZE, currentPlaylist.size());
+
+        return currentPlaylist.subList(firstElemIdx, lastElemIdx);
     }
 
-    private String formatTrack(AudioTrack track, AtomicInteger index) {
+    public AudioTrack getNowPlaying() {
+
+        AudioTrack currentlyPlaying = audioPlayer.getPlayingTrack();
+
+        if (currentlyPlaying == null) {
+
+            return null;
+        }
+
+        return currentlyPlaying;
+    }
+
+    private String formatTrack(AudioTrackInfoModel trackInfo, AtomicInteger index) {
 
         StringJoiner sb = new StringJoiner(" - ");
+
+        AudioTrack track = trackInfo.getAudioTrack();
+        User author = trackInfo.getAuthor();
 
         sb.add(getStringOrNull(track.getInfo().author));
         sb.add(getStringOrNull(track.getInfo().title));
 
-        return String.valueOf(index.getAndAdd(1)).concat(" ").concat(sb.toString());
+        return String
+                .valueOf(index.getAndAdd(1))
+                .concat(". ")
+                .concat(sb.toString())
+                .concat(" [ordered by ")
+                .concat(author.getName())
+                .concat("]");
     }
 
     private String getStringOrNull(String str) {
@@ -115,7 +165,7 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
         // Вызывается при окончании песни в плейлисте
         if (UNSKIPPABLE_REASONS.contains(endReason) && !tracks.isEmpty()) {
 
-            audioPlayer.playTrack(tracks.remove());
+            audioPlayer.playTrack(tracks.remove().getAudioTrack());
 
             return;
         }
