@@ -2,6 +2,7 @@ package ru.discord.bot.audioPlayer.misc;
 
 import net.dv8tion.jda.api.entities.User;
 import ru.discord.bot.model.AudioTrackInfoModel;
+import ru.discord.bot.util.ArrayListExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.function.Consumer;
 
 public class CustomQueue {
 
-    private final List<AudioTrackInfoModel> queue = new ArrayList<>();
+    private final ArrayListExtension<AudioTrackInfoModel> queue = new ArrayListExtension<>();
 
     private AudioTrackInfoModel lastRemoved = null;
 
@@ -22,6 +23,16 @@ public class CustomQueue {
         lastRemoved = queue.removeFirst();
 
         return lastRemoved;
+    }
+
+    public void remove(int removeCount) {
+
+        if (removeCount > queue.size()) {
+
+            removeCount = queue.size();
+        }
+
+        queue.removeIndexes(0, removeCount);
     }
 
     public AudioTrackInfoModel current() {
@@ -37,24 +48,6 @@ public class CustomQueue {
         int randomIndex = random.nextInt(queue.size() + 1);
 
         queue.add(randomIndex, track);
-
-        // TODO - Додоелать (высшая математика)
-//        User author = track.getAuthor();
-//
-//        int idx = 0;
-//
-//        for (AudioTrackInfoModel i : queue) {
-//
-//            User trackAuthor = i.getAuthor();
-//
-//            idx++;
-//        }
-//
-//        int finalIdx = idx == queue.size()
-//                ? queue.size()
-//                : idx;
-//
-//        queue.add(finalIdx, track);
     }
 
     public void forEach(Consumer<? super AudioTrackInfoModel> action) {

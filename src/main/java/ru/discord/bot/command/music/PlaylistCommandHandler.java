@@ -8,6 +8,7 @@ import ru.discord.bot.util.Logger;
 
 import java.util.List;
 
+import static ru.discord.bot.util.DiscordMessageUtil.normalizeAndSplitByWhitespaceMessage;
 import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
 
 public class PlaylistCommandHandler extends CommandHandler {
@@ -47,9 +48,7 @@ public class PlaylistCommandHandler extends CommandHandler {
 
     private Integer getPageNumber(String message) {
 
-        String normalizedMessage = message.trim().replaceAll("\\s+", " ");
-
-        String[] split = normalizedMessage.split(" ");
+        String[] split = normalizeAndSplitByWhitespaceMessage(message);
 
         if (split.length < 2) {
 
@@ -65,7 +64,7 @@ public class PlaylistCommandHandler extends CommandHandler {
                     : Integer.parseInt(pageNumStr);
         } catch (Exception e) {
 
-            log.error("Could not parse page number: " + normalizedMessage);
+            log.error("Could not parse page number: " + pageNumStr);
 
             return 1;
         }

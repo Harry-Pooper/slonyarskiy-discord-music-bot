@@ -10,8 +10,6 @@ import ru.discord.bot.bot.BotStateController;
 import ru.discord.bot.audioPlayer.AudioPlayerHandler;
 import ru.discord.bot.util.Logger;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public class GuildVoiceUpdateListener extends ListenerAdapter {
 
     private final Logger log = Logger.getLogger(GuildVoiceUpdateListener.class);
@@ -33,7 +31,15 @@ public class GuildVoiceUpdateListener extends ListenerAdapter {
 
         Guild guild = event.getGuild();
 
-        // TODO - пофиксить проверку при переходе с (к)анала на (к)анал, а не на выход + перекидывание бота
+        if (event.getMember().getIdLong() == event.getJDA().getSelfUser().getIdLong()) {
+
+            var newVoiceChannel = event.getChannelJoined() == null
+                    ? null
+                    : event.getChannelJoined().asVoiceChannel();
+
+            bsController.updateBotVoiceChannel(guild, newVoiceChannel);
+        }
+
         VoiceChannel voiceChannel = bsController.getBotVoiceChannel(guild);
 
         if (onlyClankersInChannel(voiceChannel)) {

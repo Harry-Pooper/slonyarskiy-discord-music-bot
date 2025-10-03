@@ -5,6 +5,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import ru.discord.bot.bot.RoleController;
+import ru.discord.bot.config.Configuration;
 import ru.discord.bot.listener.GuildVoiceUpdateListener;
 import ru.discord.bot.listener.MessageReceiveListener;
 import ru.discord.bot.util.Logger;
@@ -38,6 +40,12 @@ public class Main {
 
     public static void main(String[] args) {
 
+        initializeConfiguration();
+        initializeJda();
+    }
+
+    private static void initializeJda() {
+
         String token = System.getenv("token");
 
         JDA jda = JDABuilder
@@ -48,5 +56,23 @@ public class Main {
 
         jda.addEventListener(new MessageReceiveListener());
         jda.addEventListener(new GuildVoiceUpdateListener());
+    }
+
+    private static void initializeConfiguration() {
+
+        String configFilePath = System.getenv("configFilePath");
+
+        if (configFilePath == null || configFilePath.isEmpty()) {
+
+            configFilePath = "app/config";
+        }
+
+        Configuration cfg = new Configuration(configFilePath);
+        cfg.loadFromConfigFile();
+
+        RoleController roleController = new RoleController(cfg);
+
+        Configuration.setInstance(cfg);
+        RoleController.setInstance(roleController);
     }
 }

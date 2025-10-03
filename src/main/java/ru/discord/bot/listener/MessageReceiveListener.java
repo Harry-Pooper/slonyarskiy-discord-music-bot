@@ -5,12 +5,17 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import ru.discord.bot.command.*;
+import ru.discord.bot.command.admin.AddRoleCommandHandler;
+import ru.discord.bot.command.admin.AdminHelpCommandHandler;
+import ru.discord.bot.command.admin.ListRoleCommandHandler;
+import ru.discord.bot.command.admin.RemoveRoleCommandHandler;
 import ru.discord.bot.command.general.HelpCommandHandler;
 import ru.discord.bot.command.music.*;
 import ru.discord.bot.util.Logger;
 
 import java.util.Map;
 
+import static java.util.Map.entry;
 import static ru.discord.bot.util.DiscordMessageUtil.sendMessage;
 import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
 
@@ -18,13 +23,17 @@ public class MessageReceiveListener extends ListenerAdapter {
 
     private static final Logger log = Logger.getLogger(MessageReceiveListener.class);
 
-    private static final Map<String, CommandHandler> commandHandlers = Map.of(
-            "help", new HelpCommandHandler(),
-            "play", new PlayCommandHandler(),
-            "skip", new SkipCommandHandler(),
-            "stop", new StopCommandHandler(),
-            "playlist", new PlaylistCommandHandler(),
-            "np", new NowPlayingCommandHandler()
+    private static final Map<String, CommandHandler> commandHandlers = Map.ofEntries(
+            entry("admin", new AdminHelpCommandHandler()),
+            entry("addrole", new AddRoleCommandHandler()),
+            entry("removerole", new RemoveRoleCommandHandler()),
+            entry("listrole", new ListRoleCommandHandler()),
+            entry("help", new HelpCommandHandler()),
+            entry("play", new PlayCommandHandler()),
+            entry("skip", new SkipCommandHandler()),
+            entry("stop", new StopCommandHandler()),
+            entry("playlist", new PlaylistCommandHandler()),
+            entry("np", new NowPlayingCommandHandler())
     );
 
     @Override
@@ -32,7 +41,6 @@ public class MessageReceiveListener extends ListenerAdapter {
 
         if (event.getAuthor().isBot()) return;
 
-        // TODO - feature: add shuffle function 25.09.2025 19:26
         log.info("Message received: ".concat(event.getMessage().getContentRaw()));
         log.info("Thread: ".concat(Thread.currentThread().getName()));
 

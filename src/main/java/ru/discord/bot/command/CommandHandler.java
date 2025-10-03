@@ -6,13 +6,18 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import ru.discord.bot.bot.RoleController;
 import ru.discord.bot.exceptions.AudioConnectionException;
 import ru.discord.bot.model.CommandModel;
 import ru.discord.bot.util.DiscordMessageUtil;
 
 public abstract class CommandHandler {
 
+    protected final RoleController roleController = RoleController.getInstance();
+
     public void onCommand(@NotNull MessageReceivedEvent event) {
+
+        validateRoles(event);
 
         TextChannel channel = event.getChannel().asTextChannel();
         VoiceChannel voiceChannel = requiresVoiceChannel()
@@ -29,6 +34,16 @@ public abstract class CommandHandler {
                 .build();
 
         handleCommand(model);
+    }
+
+    protected void validateRoles(MessageReceivedEvent event) {
+
+        if (event.getMember() == null) {
+
+            throw new IllegalArgumentException("Member is null!");
+        }
+
+        roleController.validateRole(event.getGuild(), event.getMember());
     }
 
     protected boolean requiresVoiceChannel() {

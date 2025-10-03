@@ -40,6 +40,16 @@ public class BotStateController {
         return voiceChannelMap.get(guild);
     }
 
+    public void updateBotVoiceChannel(Guild guild, VoiceChannel voiceChannel) {
+
+        if (voiceChannel == null) {
+
+            return;
+        }
+        
+        voiceChannelMap.put(guild, voiceChannel);
+    }
+
     private static class Holder {
 
         private static BotStateController INSTANCE = null;

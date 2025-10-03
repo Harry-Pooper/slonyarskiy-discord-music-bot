@@ -17,6 +17,8 @@ import ru.discord.bot.audioPlayer.AudioPlayerHandler;
 import ru.discord.bot.audioPlayer.AudioPlayerPlaylistHandler;
 import ru.discord.bot.util.Logger;
 
+import static ru.discord.bot.exceptions.enumeration.MessageFormatExceptionTypes.INVALID_ARG_COUNT;
+import static ru.discord.bot.util.DiscordMessageUtil.normalizeAndSplitByWhitespaceMessage;
 import static ru.discord.bot.util.DiscordMessageUtil.sendReply;
 
 public class PlayCommandHandler extends CommandHandler {
@@ -59,13 +61,11 @@ public class PlayCommandHandler extends CommandHandler {
 
     private String getUrlFromMessage(String message) {
 
-        String normalizedMessage = message.trim().replaceAll("\\s+", " ");
-
-        String[] split = normalizedMessage.split(" ");
+        String[] split = normalizeAndSplitByWhitespaceMessage(message);
 
         if (split.length != 2) {
 
-            throw new MessageFormatException("Incorrect format. Should be s!play <url>");
+            throw new MessageFormatException(INVALID_ARG_COUNT.getMessage());
         }
 
         return split[1];

@@ -32,6 +32,13 @@ public class DiscordMessageUtil {
         throw new VoiceChannelNotFound("User voice channel cannot be found");
     }
 
+    public static String[] normalizeAndSplitByWhitespaceMessage(@NotNull final String message) {
+
+        String normalizedMessage = message.trim().replaceAll("\\s+", " ");
+
+        return normalizedMessage.split(" ");
+    }
+
     public static String getSongProgressLine(@NotNull final AudioTrack track) {
 
         long trackDurationInSec = track.getDuration() / 1000;

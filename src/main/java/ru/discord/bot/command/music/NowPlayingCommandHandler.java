@@ -32,10 +32,6 @@ public class NowPlayingCommandHandler extends CommandHandler {
 
         AudioTrack currentTrack = playerHandler.getPlaylistHandler(model.getOriginGuild()).getNowPlaying();
 
-//        log.info("" + currentTrack.getDuration()); // duration of song in millis
-//        log.info("" + currentTrack.getPosition()); // current position
-//        log.info("" + currentTrack.getState()); // state
-
         String message = "```"
                 .concat(currentTrack.getInfo().author)
                 .concat(currentTrack.getInfo().title)

@@ -65,7 +65,7 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
         }
     }
 
-    public void skipTrack() {
+    public void skipTracks(int skipCount) {
 
         if (audioPlayer.getPlayingTrack() == null) {
 
@@ -73,6 +73,12 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
 
             return;
         }
+
+        skipCount = skipCount > 0
+                ? skipCount - 1
+                : 0;
+
+        tracks.remove(skipCount);
 
         if (!tracks.isEmpty()) {
 
@@ -93,9 +99,11 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
 
     public List<String> getCurrentPlaylist(int pageNum) {
 
-        if (pageNum < 1) {
+        pageNum -= 1;
 
-            pageNum = 1;
+        if (pageNum < 0) {
+
+            pageNum = 0;
         }
 
         AudioTrackInfoModel currentlyPlaying = tracks.current();
@@ -111,14 +119,18 @@ public class AudioPlayerPlaylistHandler extends AudioEventAdapter implements Aud
 
         tracks.forEach(track -> currentPlaylist.add(formatTrack(track, index)));
 
-        // TODO - bug: Если число песен кратно 10, то на последней странице хуярит что плейлист пустой
-        if (pageNum * PAGE_SIZE > currentPlaylist.size()) {
+        if ((pageNum + 1) * PAGE_SIZE > currentPlaylist.size()) {
 
             pageNum = currentPlaylist.size() / 10;
+
+            if (currentPlaylist.size() % 10 == 0) {
+
+                pageNum -= 1;
+            }
         }
 
-        int firstElemIdx = (pageNum - 1) * PAGE_SIZE;
-        int lastElemIdx = Math.min(pageNum * PAGE_SIZE, currentPlaylist.size());
+        int firstElemIdx = pageNum * PAGE_SIZE;
+        int lastElemIdx = Math.min((pageNum + 1) * PAGE_SIZE, currentPlaylist.size());
 
         return currentPlaylist.subList(firstElemIdx, lastElemIdx);
     }
